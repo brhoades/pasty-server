@@ -105,6 +105,15 @@ app.post("/paste", (req, res, next) => {
 
   } else if(config.get("server.storage.type") == "aws") {
     uploadAWS(file_details.name, data, (err, awsres) => {
+      if(err) {
+        res.status(500);
+        res.send({
+          error: err
+        });
+
+        return next();
+      }
+
       res.send({
         filename: file_details.name,
         url: `${config.get("server.storage.local.external")}#${file_details.name}-`

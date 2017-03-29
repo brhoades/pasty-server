@@ -13,6 +13,12 @@ app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
   extended: true
 }));
 
+function error(msg) {
+  return {
+    error: msg
+  };
+}
+
 // https://jsfiddle.net/Guffa/DDn6W/
 function randomName(length) {
     var chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOP1234567890";
@@ -81,18 +87,17 @@ function uploadAWS(filename, data, cb) {
 // Returns a JSON hash with "filename": "file name".
 app.post("/paste", (req, res, next) => {
   let data = req.body.data;
+  let max_size_raw = config.get("server.storage.size_limit");
+  let max_size = filesizeParser(max_size_raw);
+
   res.setHeader("Access-Control-Allow-Origin", "*");
 
   if(data.length > filesizeParser(config.get("server.storage.size_limit"))) {
-    res.status(413);
-    return;
+    res.send(error(`Provided file of size ${data.length} is larger than the limit ${max_size} (${max_size_raw})`));
+    return next();
   }
 
   let file_details = getFilename();
-  if(!file_details) {
-    res.status(500);
-    return;
-  }
 
   if(config.get("server.storage.type") == "local") {
     fs.writeFile(file_details.path, data, (err) => {
@@ -101,16 +106,13 @@ app.post("/paste", (req, res, next) => {
         url: `${config.get("server.storage.local.external")}#${file_details.name}-`
       });
 
-      next();
+      return next();
     });
 
   } else if(config.get("server.storage.type") == "aws") {
     uploadAWS(file_details.name, data, (err, awsres) => {
       if(err) {
-        res.status(500);
-        res.send({
-          error: err
-        });
+        res.send(error(err));
 
         return next();
       }
@@ -120,7 +122,7 @@ app.post("/paste", (req, res, next) => {
         url: `${config.get("server.storage.local.external")}#${file_details.name}-`
       });
 
-      next();
+      return next();
     });
   }
 

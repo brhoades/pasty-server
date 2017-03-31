@@ -7,10 +7,9 @@ const filesizeParser = require('filesize-parser');
 
 const app = express();
 
-app.use(bodyParser.json({limit: config.get("server.storage.size_limit")}));       // to support JSON-encoded bodies
-app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
-  limit: config.get("server.storage.size_limit"),
-  extended: true
+app.use(bodyParser.urlencoded({
+  extended: true,
+  limit: "50mb" // a higher limit. We will send 200's with errors back before this. Afterwards, just a 314.
 }));
 
 function error(msg) {
@@ -112,7 +111,7 @@ app.post("/paste", (req, res, next) => {
   } else if(config.get("server.storage.type") == "aws") {
     uploadAWS(file_details.name, data, (err, awsres) => {
       if(err) {
-        res.send(error(err));
+        res.send(error(`AWS Error: ${err}`));
 
         return next();
       }

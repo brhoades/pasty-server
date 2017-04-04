@@ -7,6 +7,17 @@ const filesizeParser = require('filesize-parser');
 
 const app = express();
 
+//CORS middleware
+var allowCrossDomain = function(req, res, next) {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
+    res.header('Access-Control-Allow-Headers', 'Content-Type');
+
+    next();
+}
+
+app.use(allowCrossDomain);
+
 app.use(bodyParser.urlencoded({
   extended: true,
   limit: "50mb" // a higher limit. We will send 200's with errors back before this. Afterwards, just a 314.
@@ -89,8 +100,6 @@ app.post("/paste", (req, res, next) => {
   let max_size_raw = config.get("server.storage.size_limit");
   let max_size = filesizeParser(max_size_raw);
 
-  res.setHeader("Access-Control-Allow-Origin", "*");
-
   if(data.length > filesizeParser(config.get("server.storage.size_limit"))) {
     res.send(error(`Provided file of size ${data.length} is larger than the limit ${max_size} (${max_size_raw})`));
     return next();
@@ -130,7 +139,6 @@ app.post("/paste", (req, res, next) => {
 app.get("/get/:file", (req, res, next) => {
   let file = req.params.file;
   let file_path = buildFilename(file);
-  res.setHeader("Access-Control-Allow-Origin", "*");
 
 
   if(file.length != config.get("server.storage.filename_length")) {

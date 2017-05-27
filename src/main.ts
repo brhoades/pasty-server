@@ -1,48 +1,50 @@
-const express = require("express");
-const bodyParser = require('body-parser')
-const config = require("config");
-const path = require("path");
-const fs = require("fs");
-const filesizeParser = require('filesize-parser');
+import * as express from "express"
+import * as aws from "aws-sdk"
+import * as bodyParser from "body-parser"
+import * as config from "config"
+import * as path from "path"
+import * as fs from "fs"
+const filesizeParser = require("filesize-parser");
 
-const app = express();
+const app: express.Application = express();
 
 //CORS middleware
-var allowCrossDomain = function(req, res, next) {
+app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
     res.header('Access-Control-Allow-Headers', 'Content-Type');
 
     next();
-}
+});
 
-app.use(allowCrossDomain);
 
 app.use(bodyParser.urlencoded({
   extended: true,
   limit: "50mb" // a higher limit. We will send 200's with errors back before this. Afterwards, just a 314.
 }));
 
-function error(msg) {
+function error(msg: string): { error: string } {
   return {
     error: msg
   };
 }
 
 // https://jsfiddle.net/Guffa/DDn6W/
-function randomName(length) {
-    var chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOP1234567890";
-    var pass = "";
-    for (var x = 0; x < length; x++) {
-        var i = Math.floor(Math.random() * chars.length);
-        pass += chars.charAt(i);
+function randomName(length: number): string {
+    const chars: string = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOP1234567890";
+    let pass: string = "";
+
+    for(let x: number = 0; x < length; x++) {
+      let i: number = Math.floor(Math.random() * chars.length);
+      pass += chars.charAt(i);
     }
+
     return pass;
 }
 
-function buildFilename(name) {
+function buildFilename(name: string): string | null {
   if(config.get("server.storage.type") == "local") {
-    const storage_path = config.get("server.storage.local.path");
+    const storage_path: string = <string>(config.get("server.storage.local.path"));
 
     if(!fs.existsSync(storage_path)) {
       console.log(`"${storage_path}" does not exist, cannot create files in it.`);
@@ -57,19 +59,19 @@ function buildFilename(name) {
 
 // Gets a unique filename that doesn't exist.
 // Returns a hash of the name and full path to the file.
-function getFilename() {
-  let full_path = "";
-  let name = "";
+function getFilename(): { name: string, path: string } {
+  let full_path: string = "";
+  let name: string = "";
 
   // If we're local, verify this file doesn't exist
   if(config.get("server.storage.type") == "local") {
     do {
-      name = randomName(config.get("server.storage.filename_length"));
-
+      name = randomName(<number>(config.get("server.storage.filename_length")));
       full_path = buildFilename(name);
     } while(fs.existsSync(full_path));
+
   } else {
-    name = randomName(config.get("server.storage.filename_length"));
+    name = randomName(<number>(config.get("server.storage.filename_length")));
     full_path = buildFilename(name);
   }
 
@@ -81,21 +83,22 @@ function getFilename() {
 
 // Reads credentials from the environment
 // Upload some Base64 data to our configured aws bucket.
-function uploadAWS(filename, data, cb) {
-  const aws = require('aws-sdk');
-  const s3 = new aws.S3({apiVersion: '2006-03-01'});
+function uploadAWS(filename: string,
+                   data: {},
+                   cb: (err: string, awsres: string) => void) {
+  const s3: aws.S3 = new aws.S3({apiVersion: '2006-03-01'});
 
   let res = s3.upload({
     Key: filename,
     Body: data,
-    ACL: config.get("server.storage.aws.acl"),
-    Bucket: config.get("server.storage.aws.bucket"),
+    ACL: <string>(config.get("server.storage.aws.acl")),
+    Bucket: <string>(config.get("server.storage.aws.bucket")),
   }, cb);
 }
 
 // POST json with a data field
 // Returns a JSON hash with "filename": "file name".
-app.post("/paste", (req, res, next) => {
+app.post("/paste", (req: express.Request, res: express.Response, next: express.NextFunction) => {
   let data = req.body.data;
   let max_size_raw = config.get("server.storage.size_limit");
   let max_size = filesizeParser(max_size_raw);
@@ -108,7 +111,7 @@ app.post("/paste", (req, res, next) => {
   let file_details = getFilename();
 
   if(config.get("server.storage.type") == "local") {
-    fs.writeFile(file_details.path, data, (err) => {
+    fs.writeFile(file_details.path, data, (err: string) => {
       res.send({
         filename: file_details.name,
         url: `${config.get("server.storage.local.external")}#${file_details.name}-`
@@ -136,7 +139,7 @@ app.post("/paste", (req, res, next) => {
 
 });
 
-app.get("/get/:file", (req, res, next) => {
+app.get("/get/:file", (req: express.Request, res: express.Response, next: express.NextFunction) => {
   let file = req.params.file;
   let file_path = buildFilename(file);
 
@@ -153,21 +156,22 @@ app.get("/get/:file", (req, res, next) => {
 
   if(config.get("server.storage.type") == "local") {
     // read and send
-    fs.exists(file_path, (exists) => {
+    fs.exists(file_path, (exists: boolean) => {
       if(!exists) {
         console.log(`File ${file_path} does not exist.`);
         return res.status(404) && next();
       }
 
-      fs.readFile(file_path, (err, data) => {
+      fs.readFile(file_path, (err: Error, data: {}) => {
         if(err) {
           console.log(`Error in reading: ${err}`);
-          return res.status(500) && next(err);
+          res.status(500) && next(err);
+          return;
         }
 
         res.send(data);
-        return next();
-
+        next();
+        return;
       });
     });
   } else if(config.get("server.storage.type") == "aws") {

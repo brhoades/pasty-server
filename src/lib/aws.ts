@@ -10,7 +10,7 @@ export const uploadAWS = (filename: string, data: {}, cb: (err: string, awsres: 
   let res = s3.upload({
     Key: filename,
     Body: data,
-    ACL: <string>(config.get("server.storage.aws.acl")),
-    Bucket: <string>(config.get("server.storage.aws.bucket")),
+    ACL: <string>(config.get("server.storage.acl")),
+    Bucket: <string>(config.get("server.storage.bucket")),
   }, cb);
 }

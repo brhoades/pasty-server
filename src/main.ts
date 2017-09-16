@@ -1,30 +1,18 @@
 import * as express from "express";
-import * as bodyParser from "body-parser";
 import * as config from "config";
 import * as path from "path";
 import * as fs from "fs";
+const filesizeParser = require("filesize-parser");
 
 import generateId from "./lib/generate";
 import { uploadAWS } from "./lib/aws";
-import corsMiddleware from "./middleware/cors";
+import { error, tooLargeError } from "./lib/responses";
+import applyMiddleware from "./middleware/index";
 
 
-const filesizeParser = require("filesize-parser");
 const app: express.Application = express();
 
-//CORS middleware
-app.use(corsMiddleware);
-
-app.use(bodyParser.urlencoded({
-  extended: true,
-  limit: "5mb",
-}));
-
-function error(msg: string): { error: string } {
-  return {
-    error: msg,
-  };
-}
+applyMiddleware(app);
 
 // Return a unique filename
 function getFilename(): string {
@@ -34,52 +22,56 @@ function getFilename(): string {
 // POST json with a data field
 // Returns a JSON hash with "filename": "file name".
 app.post("/paste", (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (!req.body || !req.body.data || !req.body.data.length) {
+    console.log("Bad request");
+    return res.status(400).json(error("Expected a request with a data key."));
+  }
+
   const data = req.body.data;
   const maxSizeRaw: string = <string>config.get("server.storage.size_limit");
   const maxSize: number = filesizeParser(maxSizeRaw);
 
   if (data.length > maxSize) {
-    res.send(error(
-      `Provided file of size ${data.length} is larger than the limit ${maxSize} (${maxSizeRaw})`
-    ));
-    return next();
+    return res.json(tooLargeError(data.length));
   }
 
   const filename: string = generateId(<number>(config.get("server.storage.filename_length")));
 
   uploadAWS(filename, data, (err, awsres) => {
     if (err) {
-      res.send(error(`AWS Error: ${err}`));
-
-      return next();
+      return res.json(error(`AWS Error: ${err}`));
     }
 
-    res.send({
-      filename,
-    });
-
-    return next();
+    return res.json({ filename });
   });
 });
 
 app.get("/get/:file", (req: express.Request, res: express.Response, next: express.NextFunction) => {
   const file: string = req.params.file;
-  const filePath: string = `${config.get("server.storage.aws.baseurl")}${file}`;
+  const filePath: string = `${config.get("server.storage.baseurl")}${file}`;
 
   if (file.length !== config.get("server.storage.filename_length")) {
     console.log(`${req.params.file} != configured length`);
-    return res.status(404) && next();
+    return res.status(404);
   }
 
   if (/[^A-Za-z0-9_\-]/.test(file)) {
     console.log(`${req.params.file} has bad characters`);
-    return res.status(404) && next();
+    return res.status(404);
   }
 
   // 301
   res.redirect(301, filePath);
 });
 
-app.listen(3000, () => {
-  console.log("Pasty server is listening on port 3000!");
-});
+
+if (process.env.NODE_ENV === "development") {
+  console.error("Running in development mode.");
+  app.listen(3000, () => {
+    console.log("Pasty server is listening on port 3000!");
+  });
+} else {
+  app.listen(3000, () => {
+    console.log("Pasty server is listening on port 3000!");
+  });
+}

@@ -5,7 +5,8 @@
   "scripts": {
     "build": "tsc -p .",
     "build:live": "NODE_ENV='development' nodemon --exec ./node_modules/.bin/ts-node -- ./src/main.ts",
-    "server": "npm run build && node dist/main.js"
+    "server": "npm run build && node dist/main.js",
+    "update": "npm run build && swagger-jsdoc -d dist/swaggerDef.js dist/**/*.js"
   },
   "dependencies": {
     "aws-sdk": "^2.32.0",
@@ -15,6 +16,8 @@
     "express": "^4.15.3",
     "filesize-parser": "^1.4.1",
     "shortid": "^2.2.8",
+    "swagger-express": "^1.0.5",
+    "swagger-jsdoc": "^1.9.7",
     "typescript": "^2.3.3"
   },
   "devDependencies": {

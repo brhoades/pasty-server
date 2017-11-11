@@ -22,12 +22,20 @@ function getFilename(): string {
 // POST json with a data field
 // Returns a JSON hash with "filename": "file name".
 app.post("/paste", (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  if (!req.body || !req.body.data || !req.body.data.length) {
-    console.log("Bad request");
-    return res.status(400).json(error("Expected a request with a data key."));
-  }
+  let data = "";
 
-  const data = req.body.data;
+  if (req.headers['content-type'] === "application/x-www-form-urlencode") {
+    if (!req.body || !req.body.data || !req.body.data.length) {
+        console.log("Bad request");
+        return res.status(400).json(error("Expected a request with a data key."));
+    }
+
+    data = req.body.data;
+  } else {
+    data = req.body;
+    console.log("DATA IN BODY: ");
+    console.dir(data);
+  }
   const maxSizeRaw: string = <string>config.get("server.storage.size_limit");
   const maxSize: number = filesizeParser(maxSizeRaw);
 
@@ -67,11 +75,11 @@ app.get("/get/:file", (req: express.Request, res: express.Response, next: expres
 
 if (process.env.NODE_ENV === "development") {
   console.error("Running in development mode.");
-  app.listen(3000, () => {
+  app.listen(3001, () => {
     console.log("Pasty server is listening on port 3000!");
   });
 } else {
-  app.listen(3000, () => {
+  app.listen(3001, () => {
     console.log("Pasty server is listening on port 3000!");
   });
 }

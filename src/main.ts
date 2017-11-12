@@ -33,8 +33,6 @@ app.post("/paste", (req: express.Request, res: express.Response, next: express.N
     data = req.body.data;
   } else {
     data = req.body;
-    console.log("DATA IN BODY: ");
-    console.dir(data);
   }
   const maxSizeRaw: string = <string>config.get("server.storage.size_limit");
   const maxSize: number = filesizeParser(maxSizeRaw);
@@ -75,11 +73,11 @@ app.get("/get/:file", (req: express.Request, res: express.Response, next: expres
 
 if (process.env.NODE_ENV === "development") {
   console.error("Running in development mode.");
-  app.listen(3001, () => {
+  app.listen(3000, () => {
     console.log("Pasty server is listening on port 3000!");
   });
 } else {
-  app.listen(3001, () => {
+  app.listen(3000, () => {
     console.log("Pasty server is listening on port 3000!");
   });
 }

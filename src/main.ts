@@ -38,7 +38,7 @@ app.post("/paste", (req: express.Request, res: express.Response, next: express.N
   const maxSize: number = filesizeParser(maxSizeRaw);
 
   if (data.length > maxSize) {
-    return res.json(tooLargeError(data.length));
+    return res.status(413).json(tooLargeError(data.length));
   }
 
   const filename: string = generateId(<number>(config.get("server.storage.filename_length")));

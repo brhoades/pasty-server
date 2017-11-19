@@ -6,10 +6,10 @@ import errorHandler from "./errors";
 
 
 const applyMiddleware = (app: Application): void => {
+  app.use(corsMiddleware);
   app.use(rawParser);
   app.use(jsonParser);
   app.use(urlEncodedParser);
-  app.use(corsMiddleware);
   app.use(errorHandler);
 };
 

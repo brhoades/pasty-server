@@ -10,8 +10,8 @@ import { genSaltSync, hashSync } from "bcrypt";
 
 
 export const sequelize = new Sequelize({
-  ...config.get("db"),
   logging: false,
+  ...config.get("db"),
 });
 
 @Table({

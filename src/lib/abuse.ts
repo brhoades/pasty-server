@@ -143,3 +143,17 @@ export const addUpload = (ip: string, rawSize: number, cb: (use: Usage) => any):
     });
 };
 
+// Delete old usages. Since clients require bcrypt, these aren't
+// deleted for now due to a performance hit.
+export const cleanupLogs = () => {
+  Usage.destroy({
+    where: {
+      createdAt: {
+        [Op.lte]: new Date(
+          new Date().getTime() - parseInt(config.get("server.storage.abuse_prevention.time_window"), 10) * 1000
+        ),
+      },
+    }
+  });
+};
+

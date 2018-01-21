@@ -5,13 +5,12 @@ import * as fs from "fs";
 
 import generateId from "./lib/generate";
 import { uploadAWS } from "./lib/aws";
-import { addUpload } from "./lib/abuse";
+import { addUpload, cleanupLogs } from "./lib/abuse";
 import { setupDatabase } from "./lib/db";
 import { error, tooLargeError } from "./lib/responses";
 import applyMiddleware from "./middleware/index";
 
 
-setupDatabase();
 const app: express.Application = express();
 
 applyMiddleware(app);
@@ -70,6 +69,8 @@ app.get("/get/:file", (req: express.Request, res: express.Response, next: expres
 });
 
 
+setupDatabase();
+setInterval(cleanupLogs, 5*60*1000);
 if (process.env.NODE_ENV === "development") {
   console.error("Running in development mode.");
   app.listen(3000, () => {

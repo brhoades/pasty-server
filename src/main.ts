@@ -2,14 +2,16 @@ import * as express from "express";
 import * as config from "config";
 import * as path from "path";
 import * as fs from "fs";
-const filesizeParser = require("filesize-parser");
 
 import generateId from "./lib/generate";
 import { uploadAWS } from "./lib/aws";
+import { addUpload } from "./lib/abuse";
+import { setupDatabase } from "./lib/db";
 import { error, tooLargeError } from "./lib/responses";
 import applyMiddleware from "./middleware/index";
 
 
+setupDatabase();
 const app: express.Application = express();
 
 applyMiddleware(app);
@@ -22,7 +24,7 @@ function getFilename(): string {
 // POST json with a data field
 // Returns a JSON hash with "filename": "file name".
 app.post("/paste", (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  let data = "";
+  let data: string | Buffer;
 
   if (req.headers['content-type'] === "application/x-www-form-urlencode") {
     if (!req.body || !req.body.data || !req.body.data.length) {
@@ -34,12 +36,6 @@ app.post("/paste", (req: express.Request, res: express.Response, next: express.N
   } else {
     data = req.body;
   }
-  const maxSizeRaw: string = <string>config.get("server.storage.size_limit");
-  const maxSize: number = filesizeParser(maxSizeRaw);
-
-  if (data.length > maxSize) {
-    return res.status(413).json(tooLargeError(data.length));
-  }
 
   const filename: string = generateId(<number>(config.get("server.storage.filename_length")));
 
@@ -48,7 +44,10 @@ app.post("/paste", (req: express.Request, res: express.Response, next: express.N
       return res.json(error(`AWS Error: ${err}`));
     }
 
-    return res.json({ filename });
+    addUpload(req.ip, data.length, (use) => {
+      return res.json({ filename });
+    });
+
   });
 });
 

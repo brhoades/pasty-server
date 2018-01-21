@@ -2,11 +2,26 @@
   "server": {
     "storage": {
       "size_limit": "5 MB",
+      "abuse_prevention": {
+        "enable": true,
+        "perturb_size": 0.05,
+        "perturb_date": 0.05,
+        "allotment": "5 MB",
+        "time_window": 43200,
+        "delay_coefficient": 2
+      },
       "filename_length": 8,
       "bucket": "bucket",
       "storage_class": "STANDARD",
       "baseurl": "https://region.amazonaws.com/bucket/",
       "acl": "public-read"
     }
+  },
+  "db": {
+    "database": "database_name",
+    "username": "username",
+    "password": "password",
+    "storage": "db.sqlite3",
+    "dialect": "sqlite"
   }
 }

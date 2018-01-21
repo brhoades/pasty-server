@@ -1,5 +1,6 @@
 import * as config from "config";
 const filesizeParser = require("filesize-parser");
+import prettyMs = require("pretty-ms");
 
 
 export interface ErrorObject {
@@ -25,5 +26,12 @@ export const tooLargeError = (size: number): ErrorObject => {
 
   return error(
     `Provided paste with size ${size} is larger than the limit ${maxSize} (${maxSizeRaw})`,
+  );
+};
+
+export const abusePreventionTriggered  = (delay: number): ErrorObject => {
+  return error(
+    "Your IP is in a bucket that is being rate limited. Upload something smaller or "
+    + `try again in ${prettyMs(Math.floor(delay), {verbose: true})}.`
   );
 };

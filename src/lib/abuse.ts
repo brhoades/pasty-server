@@ -113,7 +113,7 @@ export const canUpload = (ip: string, size: number, cb: (allowed: boolean, delay
             cb(true, 0);
           }
           const delay = calculateUploadDelay(uses, size)
-          const lastUse: Date = uses[uses.length - 1].createdAt;
+          const lastUse: Date = uses.length ? uses[uses.length - 1].createdAt : new Date(0);
           const nextUpload = new Date(delay + lastUse.getTime());
 
           if (new Date() >= nextUpload) {

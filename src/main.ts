@@ -5,7 +5,7 @@ import * as fs from "fs";
 
 import generateId from "./lib/generate";
 import { uploadAWS } from "./lib/aws";
-import { addUpload, cleanupLogs } from "./lib/abuse";
+import { addUpload, canUpload, cleanupLogs } from "./lib/abuse";
 import { setupDatabase } from "./lib/db";
 import { error, tooLargeError } from "./lib/responses";
 import applyMiddleware from "./middleware/index";
@@ -66,6 +66,16 @@ app.get("/get/:file", (req: express.Request, res: express.Response, next: expres
 
   // 301
   res.redirect(301, filePath);
+});
+
+app.get("/delay/:size", (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  canUpload(req.ip, req.params.size, (allowed, delay) => {
+    if (allowed) {
+      return res.json({ delay: 0 });
+    }
+
+    return res.json({ delay });
+  });
 });
 
 

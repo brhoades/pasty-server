@@ -56,12 +56,12 @@ app.get("/get/:file", (req: express.Request, res: express.Response, next: expres
 
   if (file.length !== config.get("server.storage.filename_length")) {
     console.log(`${req.params.file} != configured length`);
-    return res.status(404);
+    return res.status(404).json(error("Invalid filename length"));
   }
 
   if (/[^A-Za-z0-9_\-]/.test(file)) {
     console.log(`${req.params.file} has bad characters`);
-    return res.status(404);
+    return res.status(404).json(error("Invalid filename format"));
   }
 
   // 301

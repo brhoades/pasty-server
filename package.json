@@ -1,6 +1,6 @@
 {
   "name": "pasty-server",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Anonymous, encrypted pastebin for files. Server component.",
   "scripts": {
     "build": "tsc -p .",

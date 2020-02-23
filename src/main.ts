@@ -69,7 +69,7 @@ app.get("/get/:file", (req: express.Request, res: express.Response, next: expres
 });
 
 app.get("/delay/:size", (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  canUpload(req.ip, req.params.size, (allowed, delay) => {
+  canUpload(req.ip, parseInt(req.params.size, 10), (allowed: boolean, delay: number) => {
     if (allowed) {
       return res.json({ delay: 0 });
     }

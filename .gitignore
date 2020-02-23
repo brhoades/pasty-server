@@ -1,5 +1,4 @@
 node_modules
-yarn.lock
 config/default.json
 dist/*
 *.sqlite3

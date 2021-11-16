@@ -9,7 +9,7 @@
     "update": "npm run build && swagger-jsdoc -d dist/swaggerDef.js dist/**/*.js"
   },
   "dependencies": {
-    "aws-sdk": "^2.32.0",
+    "aws-sdk": "^2.814.0",
     "bcrypt": "^4.0.0",
     "body-parser": "^1.17.1",
     "config": "^1.25.1",
